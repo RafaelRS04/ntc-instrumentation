@@ -4,6 +4,9 @@
 /* Value for 1 Hz overflow interruptions */
 #define COUNTER_INITIAL_VALUE (65536 - (F_CPU / 1024))
 
+/* Voltage estimative calculation via analog readed values */
+#define CALCULATE_VOLTAGE(ntc_read) (5 * ntc_read / 1023.0f)
+
 static volatile int16_t ntc_read; 
 static uint8_t ntc_pin;
 
@@ -11,10 +14,15 @@ ISR(TIMER1_OVF_vect) {
     TCNT1 = COUNTER_INITIAL_VALUE;
 
     ntc_read = analogRead(ntc_pin);
-    ntc_read = map(ntc_read, 0, 1023, 0, 100);
 }
 
-void NTC::begin(uint8_t analog_pin, float max_voltage) {
+NTC::NTC(uint8_t analog_pin, float slope, float intercept) {
+    this->analog_pin = analog_pin;
+    this->slope = slope;
+    this->intercept = intercept;
+}
+
+void NTC::begin() {
     pinMode(analog_pin, INPUT);
 
     cli();
@@ -36,8 +44,7 @@ void NTC::begin(uint8_t analog_pin, float max_voltage) {
 float NTC::read_temperature() {
     cli();
 
-    float temperature = 100 - ntc_read + 260;
-    temperature = temperature / 10.0f;
+    float temperature = CALCULATE_VOLTAGE(ntc_read) * slope + intercept;
 
     sei();
 
@@ -47,7 +54,7 @@ float NTC::read_temperature() {
 float NTC::read_voltage() {
     cli();
 
-    float voltage = 5 * ntc_read / 100.0f;
+    float voltage = CALCULATE_VOLTAGE(ntc_read);
     
     sei();
 

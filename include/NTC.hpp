@@ -3,10 +3,18 @@
 
 #include <Arduino.h>
 
-namespace NTC {
-    void begin(uint8_t analog_pin, float max_voltage);
+class NTC {
+public:
+    NTC(uint8_t analog_pin, float slope, float intercept);
+
+    void begin();
     float read_temperature();
     float read_voltage();
+
+private:
+    uint8_t analog_pin;
+    float slope;
+    float intercept;
 };
 
 #endif /* NTC.hpp */
